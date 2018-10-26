@@ -21,7 +21,7 @@
  * alert(), and add(N, 5).
  */
 
-#define LOG_TAG "binder_demo"
+#define TAG "binder_demo"
 
 /* For relevant code see:
     frameworks/native/{include,libs}/binder/{IInterface,Parcel}.{h,cpp}
@@ -32,7 +32,8 @@
 
 #include <utils/RefBase.h>
 #include <utils/Log.h>
-#include <binder/TextOutput.h>
+#include <utils/TextOutput.h>
+//#include <binder/TextOutput.h>
 
 #include <binder/IInterface.h>
 #include <binder/IBinder.h>
@@ -42,18 +43,25 @@
 
 using namespace android;
 
+//ALOGD(__VA_ARGS__); \
 
-#define INFO(...) \
-    do { \
-        printf(__VA_ARGS__); \
-        printf("\n"); \
-        ALOGD(__VA_ARGS__); \
-    } while(0)
+//#define INFO(...) \
+//    do { \
+//        printf(__VA_ARGS__); \
+//        printf("\n"); \
+//		LOGD( __VA_ARGS__); \
+//    } while(0)
+
+
+#define  LOGD(...)        __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__)
+
+//#define ALOGD(...) \
+//	LOGD(TAG, __VA_ARGS__);
 
 void assert_fail(const char *file, int line, const char *func, const char *expr) {
-    INFO("assertion failed at file %s, line %d, function %s:",
+    LOGD("assertion failed at file %s, line %d, function %s:",
             file, line, func);
-    INFO("%s", expr);
+    LOGD("%s", expr);
     abort();
 }
 
@@ -96,7 +104,8 @@ class IDemo : public IInterface {
 class BpDemo : public BpInterface<IDemo> {
     public:
         BpDemo(const sp<IBinder>& impl) : BpInterface<IDemo>(impl) {
-            ALOGD("BpDemo::BpDemo()");
+            //ALOGD("BpDemo::BpDemo()");
+            LOGD("BpDemo::BpDemo()");
         }
 
         virtual void push(int32_t push_data) {
@@ -112,7 +121,7 @@ class BpDemo : public BpInterface<IDemo> {
             aout << "BpDemo::push parcel reply:\n";
             reply.print(PLOG); endl(PLOG);
 
-            ALOGD("BpDemo::push(%i)", push_data);
+            LOGD("BpDemo::push(%i)", push_data);
         }
 
         virtual void alert() {
@@ -120,7 +129,7 @@ class BpDemo : public BpInterface<IDemo> {
             data.writeInterfaceToken(IDemo::getInterfaceDescriptor());
             data.writeString16(String16("The alert string"));
             remote()->transact(ALERT, data, &reply, IBinder::FLAG_ONEWAY);    // asynchronous call
-            ALOGD("BpDemo::alert()");
+            LOGD("BpDemo::alert()");
         }
 
         virtual int32_t add(int32_t v1, int32_t v2) {
@@ -131,12 +140,12 @@ class BpDemo : public BpInterface<IDemo> {
             aout << "BpDemo::add parcel to be sent:\n";
             data.print(PLOG); endl(PLOG);
             remote()->transact(ADD, data, &reply);
-            ALOGD("BpDemo::add transact reply");
+            LOGD("BpDemo::add transact reply");
             reply.print(PLOG); endl(PLOG);
 
             int32_t res;
             status_t status = reply.readInt32(&res);
-            ALOGD("BpDemo::add(%i, %i) = %i (status: %i)", v1, v2, res, status);
+            LOGD("BpDemo::add(%i, %i) = %i (status: %i)", v1, v2, res, status);
             return res;
         }
 };
@@ -157,8 +166,8 @@ class BpDemo : public BpInterface<IDemo> {
         }
         return intr;
     }
-    IDemo::IDemo() { ALOGD("IDemo::IDemo()"); }
-    IDemo::~IDemo() { ALOGD("IDemo::~IDemo()"); }
+    IDemo::IDemo() { LOGD("IDemo::IDemo()"); }
+    IDemo::~IDemo() { LOGD("IDemo::~IDemo()"); }
     // End of macro expansion
 
 // Server
@@ -167,7 +176,7 @@ class BnDemo : public BnInterface<IDemo> {
 };
 
 status_t BnDemo::onTransact(uint32_t code, const Parcel& data, Parcel* reply, uint32_t flags) {
-    ALOGD("BnDemo::onTransact(%i) %i", code, flags);
+    LOGD("BnDemo::onTransact(%i) %i", code, flags);
     data.checkInterface(this);
     data.print(PLOG); endl(PLOG);
 
@@ -178,7 +187,7 @@ status_t BnDemo::onTransact(uint32_t code, const Parcel& data, Parcel* reply, ui
         } break;
         case PUSH: {
             int32_t inData = data.readInt32();
-            ALOGD("BnDemo::onTransact got %i", inData);
+            LOGD("BnDemo::onTransact got %i", inData);
             push(inData);
             ASSERT(reply != 0);
             reply->print(PLOG); endl(PLOG);
@@ -188,7 +197,7 @@ status_t BnDemo::onTransact(uint32_t code, const Parcel& data, Parcel* reply, ui
             int32_t inV1 = data.readInt32();
             int32_t inV2 = data.readInt32();
             int32_t sum = add(inV1, inV2);
-            ALOGD("BnDemo::onTransact add(%i, %i) = %i", inV1, inV2, sum);
+            LOGD("BnDemo::onTransact add(%i, %i) = %i", inV1, inV2, sum);
             ASSERT(reply != 0);
             reply->print(PLOG); endl(PLOG);
             reply->writeInt32(sum);
@@ -201,13 +210,13 @@ status_t BnDemo::onTransact(uint32_t code, const Parcel& data, Parcel* reply, ui
 
 class Demo : public BnDemo {
     virtual void push(int32_t data) {
-        INFO("Demo::push(%i)", data);
+        LOGD("Demo::push(%i)", data);
     }
     virtual void alert() {
-        INFO("Demo::alert()");
+        LOGD("Demo::alert()");
     }
     virtual int32_t add(int32_t v1, int32_t v2) {
-        INFO("Demo::add(%i, %i)", v1, v2);
+        LOGD("Demo::add(%i, %i)", v1, v2);
         return v1 + v2;
     }
 };
@@ -229,15 +238,15 @@ sp<IDemo> getDemoServ() {
 int main(int argc, char **argv) {
 
     if (argc == 1) {
-        ALOGD("We're the service");
+        LOGD("We're the service");
 
         defaultServiceManager()->addService(String16("Demo"), new Demo());
         android::ProcessState::self()->startThreadPool();
-        ALOGD("Demo service is now ready");
+        LOGD("Demo service is now ready");
         IPCThreadState::self()->joinThreadPool();
-        ALOGD("Demo service thread joined");
+        LOGD("Demo service thread joined");
     } else if (argc == 2) {
-        INFO("We're the client: %s", argv[1]);
+        LOGD("We're the client: %s", argv[1]);
 
         int v = atoi(argv[1]);
 
@@ -246,7 +255,7 @@ int main(int argc, char **argv) {
         demo->push(v);
         const int32_t adder = 5;
         int32_t sum = demo->add(v, adder);
-        ALOGD("Addition result: %i + %i = %i", v, adder, sum);
+        LOGD("Addition result: %i + %i = %i", v, adder, sum);
     }
 
     return 0;
